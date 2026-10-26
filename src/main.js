@@ -600,40 +600,27 @@ function Wizard({initial,editing,onSubmit,onCancel,onToast,uploadPhoto,selectedT
 }
 
 
-function LoginModal({onClose,signIn,verifyOtp,configured}){
+function LoginModal({onClose,signIn,configured}){
   const [email,setEmail]=useState("");
-  const [code,setCode]=useState("");
   const [state,setState]=useState("idle");
   const [err,setErr]=useState("");
   const submit=async()=>{
     if(!/^\S+@\S+\.\S+$/.test(email.trim())){setErr("Enter a valid email address");return;}
     setState("sending");setErr("");
     try{await signIn(email.trim());setState("sent");}
-    catch(e){setState("idle");setErr(e.message==="not_configured"?"Sign-in isn't configured on this deployment.":"Couldn't send the code. Try again.");}
-  };
-  const verify=async()=>{
-    if(!code.trim()){setErr("Enter the 6-digit code");return;}
-    setState("verifying");setErr("");
-    try{await verifyOtp(email.trim(),code.trim());onClose();}
-    catch(e){setState("sent");setErr("Invalid or expired code. Try again.");}
+    catch(e){setState("idle");setErr(e.message==="not_configured"?"Sign-in isn't configured on this deployment.":"Couldn't send the link. Try again.");}
   };
   return h("div",{className:"modal-overlay",onClick:e=>{if(e.target===e.currentTarget)onClose()}},
     h("div",{className:"modal-box",style:{maxWidth:420}},
       h("div",{className:"modal-header"},h("h3",{style:{fontSize:"1.5rem",color:"var(--rose-deep)"}},"Sign in"),h("button",{className:"modal-close",onClick:onClose,"aria-label":"Close"},"×")),
       h("div",{className:"modal-body"},
         !configured&&h("div",{className:"note"},"Backend not configured: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."),
-        state==="sent"||state==="verifying"?
-          h(React.Fragment,null,
-            h("p",{style:{fontSize:".92rem",color:"var(--text-2)",lineHeight:1.6,marginBottom:12}},"Enter the 6-digit code sent to ",h("strong",null,email),"."),
-            h("input",{className:"form-input",type:"text",autoFocus:true,placeholder:"123456",maxLength:6,value:code,onChange:e=>{setCode(e.target.value.replace(/\D/g,""));setErr("");},onKeyDown:e=>{if(e.key==="Enter")verify();},style:{letterSpacing:"0.3em",fontSize:"1.3rem",textAlign:"center"}}),
-            err&&h("div",{className:"validation-err"},err),
-            h("button",{className:"btn-next",style:{width:"100%",marginTop:12},disabled:state==="verifying",onClick:verify},state==="verifying"?"Verifying…":"Verify code"),
-            h("button",{style:{background:"none",border:"none",color:"var(--text-3)",fontSize:".82rem",cursor:"pointer",marginTop:8,width:"100%"},onClick:()=>{setState("idle");setCode("");setErr("");}},"← Use a different email")):
+        state==="sent"?h("p",{style:{fontSize:".92rem",color:"var(--text-2)",lineHeight:1.6}},"Check ",h("strong",null,email),". Click the sign-in link in that email."):
         h(React.Fragment,null,
-          h("p",{style:{fontSize:".85rem",color:"var(--text-3)",marginBottom:12}},"We'll email you a 6-digit sign-in code. No password needed."),
+          h("p",{style:{fontSize:".85rem",color:"var(--text-3)",marginBottom:12}},"We'll email you a sign-in link. No password needed."),
           h("input",{className:"form-input",type:"email",autoFocus:true,placeholder:"name@example.com",value:email,onChange:e=>{setEmail(e.target.value);setErr("");},onKeyDown:e=>{if(e.key==="Enter")submit();}}),
           err&&h("div",{className:"validation-err"},err),
-          h("button",{className:"btn-next",style:{width:"100%",marginTop:12},disabled:state==="sending",onClick:submit},state==="sending"?"Sending…":"Email me a code")))));
+          h("button",{className:"btn-next",style:{width:"100%",marginTop:12},disabled:state==="sending",onClick:submit},state==="sending"?"Sending…":"Email me a sign-in link")))));
 }
 
 function useCompare(onToast){
@@ -994,7 +981,7 @@ function App(){
     viewProfile&&h(ProfileModal,{profile:viewProfile,onClose:()=>setViewProfile(null),isSaved:be.saved.all.includes(pid(viewProfile)),onSave:setSaveTarget}),
     saveTarget&&h(SaveSheet,{profile:saveTarget,saved:be.saved,onChange:be.writeSaved,onClose:()=>setSaveTarget(null),onToast:toast,loggedIn:be.loggedIn}),
     showCompare&&compareProfiles.length>=2&&h(CompareModal,{profiles:compareProfiles,onClose:()=>setShowCompare(false)}),
-    showLogin&&h(LoginModal,{onClose:()=>setShowLogin(false),signIn:be.signIn,verifyOtp:be.verifyOtp,configured:be.configured}),
+    showLogin&&h(LoginModal,{onClose:()=>setShowLogin(false),signIn:be.signIn,configured:be.configured}),
     toastMsg&&h(Toast,{key:toastMsg.key,msg:toastMsg.msg,type:toastMsg.type,onDone:()=>setToastMsg(null)})
   );
 }
