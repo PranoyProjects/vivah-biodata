@@ -5,7 +5,7 @@ import {createClient} from '@supabase/supabase-js';
 
 const URL=import.meta.env.VITE_SUPABASE_URL;
 const KEY=import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const supabase=URL&&KEY?createClient(URL,KEY):null;
+export const supabase=URL&&KEY?createClient(URL,KEY,{auth:{detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}}):null;
 if(!supabase){
   console.error('⚠️ Vivah: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing. Check .env.local');
   if(import.meta.env.DEV){
