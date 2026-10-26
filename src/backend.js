@@ -5,7 +5,7 @@ import {createClient} from '@supabase/supabase-js';
 
 const URL=import.meta.env.VITE_SUPABASE_URL;
 const KEY=import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const supabase=URL&&KEY?createClient(URL,KEY,{auth:{detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}}):null;
+export const supabase=URL&&KEY?createClient(URL,KEY,{auth:{detectSessionInUrl:true,persistSession:true,autoRefreshToken:true,flowType:"pkce"}}):null;
 if(!supabase){
   console.error('⚠️ Vivah: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing. Check .env.local');
   if(import.meta.env.DEV){
@@ -86,7 +86,12 @@ export function useBackend(){
 
   const signIn=useCallback(async email=>{
     if(!supabase)throw new Error('not_configured');
-    const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin}});
+    const {error}=await supabase.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+    if(error)throw error;
+  },[]);
+  const verifyOtp=useCallback(async(email,token)=>{
+    if(!supabase)throw new Error('not_configured');
+    const {error}=await supabase.auth.verifyOtp({email,token,type:'email'});
     if(error)throw error;
   },[]);
   const signOut=useCallback(()=>supabase&&supabase.auth.signOut(),[]);
@@ -110,5 +115,5 @@ export function useBackend(){
   },[uid]);
 
   const myRaw=members.find(m=>m._uid===uid)||null;
-  return {ready,configured:!!supabase,uid,me,loggedIn:!!uid,members,saved,contact,myRaw,writeSaved,saveProfile,deleteProfile,uploadPhoto,deletePhoto,signIn,signOut};
+  return {ready,configured:!!supabase,uid,me,loggedIn:!!uid,members,saved,contact,myRaw,writeSaved,saveProfile,deleteProfile,uploadPhoto,deletePhoto,signIn,verifyOtp,signOut};
 }
